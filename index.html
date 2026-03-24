@@ -120,16 +120,26 @@
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
+      max-width: 900px;
     }
     .skill-tag {
       background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 4px 12px;
+      border-radius: 12px;
+      padding: 8px 14px;
       font-size: 0.8rem;
       color: var(--text-dim);
+      cursor: default;
+      transition: all 0.2s;
+      display: inline-block;
+      margin: 4px;
+      min-width: 160px;
     }
-    .skill-tag:hover { border-color: var(--accent); color: var(--accent); }
+    .skill-tag:hover { border-color: var(--accent); }
+    .skill-tag .skill-name { font-weight: 600; color: var(--text); font-size: 0.85rem; }
+    .skill-tag .skill-desc { font-size: 0.72rem; color: var(--text-dim); margin-top: 3px; line-height: 1.3; }
+    .skill-tag:hover .skill-name { color: var(--accent); }
+    .skill-tag:hover .skill-desc { color: rgba(0,212,170,0.8); }
 
     /* ── Status row ── */
     .status-row {
@@ -310,21 +320,21 @@ async function loadText(url) {
 }
 
 async function main() {
-  const [status, skills, historyText] = await Promise.all([
-    loadJSON(`${RAW_BASE}/data/status.json`),
-    loadJSON(`${RAW_BASE}/data/skills.json`),
-    loadText(`${RAW_BASE}/data/history_recent.jsonl`)
-  ]);
+  try {
+    const [status, skills, historyText] = await Promise.all([
+      loadJSON(`${RAW_BASE}/data/status.json`),
+      loadJSON(`${RAW_BASE}/data/skills.json`),
+      loadText(`${RAW_BASE}/data/history_recent.jsonl`)
+    ]);
 
-  // ── Hide loader ──
-  const loading = document.getElementById('loading');
-  loading.classList.add('hidden');
-  setTimeout(() => loading.remove(), 400);
+    // ── Hide loader ──
+    const loading = document.getElementById('loading');
+    if (loading) { loading.classList.add('hidden'); setTimeout(() => loading.remove(), 400); }
 
-  if (!status) {
-    document.body.innerHTML += '<p style="color:var(--red);padding:24px">⚠️ 数据加载失败，请检查 GitHub Pages 配置</p>';
-    return;
-  }
+    if (!status) {
+      document.body.innerHTML += '<p style="color:var(--red);padding:24px">⚠️ 数据加载失败，请稍后刷新重试</p>';
+      return;
+    }
 
   document.getElementById('update-time').textContent =
     `最后更新：${status.datetime} · 每小时自动刷新`;
@@ -368,17 +378,26 @@ async function main() {
   const gwCard = document.getElementById('card-gateway');
   gwCard.className = 'card ' + (status.gatewayState === 'local' ? 'green' : status.gatewayState === 'remote' ? 'yellow' : 'red');
 
-  // ── Skills list ──
-  if (skills && skills.skills) {
+  // ── Skills list with descriptions ──
+  if (skills && skills.skills && skills.skills.length > 0 && typeof skills.skills[0] === 'object') {
     document.getElementById('skill-count').textContent = skills.skills.length;
     document.getElementById('skills-list').innerHTML = skills.skills.map(s =>
-      `<span class="skill-tag">${s}</span>`
+      `<div class="skill-tag" title="${s.desc || s.name}">
+        <div class="skill-name">${s.name}</div>
+        <div class="skill-desc">${s.desc || '无描述'}</div>
+      </div>`
+    ).join('');
+  } else if (skills && skills.skills && Array.isArray(skills.skills)) {
+    const skills_arr = skills.skills;
+    document.getElementById('skill-count').textContent = skills_arr.length;
+    document.getElementById('skills-list').innerHTML = skills_arr.map(s =>
+      `<div class="skill-tag" title="${s}"><div class="skill-name">${s}</div></div>`
     ).join('');
   } else if (status.skillsList) {
     const skills_arr = status.skillsList.split(',').filter(Boolean);
     document.getElementById('skill-count').textContent = skills_arr.length;
     document.getElementById('skills-list').innerHTML = skills_arr.map(s =>
-      `<span class="skill-tag">${s}</span>`
+      `<div class="skill-tag"><div class="skill-name">${s}</div></div>`
     ).join('');
   }
 
@@ -465,9 +484,15 @@ async function main() {
     },
     options: { ...chartOpts, plugins: { legend: { display: false } } }
   });
+  } catch(e) {
+    console.error(e);
+    const loading = document.getElementById('loading');
+    if (loading) { loading.classList.add('hidden'); setTimeout(() => loading.remove(), 400); }
+    document.body.innerHTML += '<p style="color:var(--red);padding:24px">⚠️ 页面加载出错，请刷新重试</p>';
+  }
 }
 
-main().catch(console.error);
+main();
 </script>
 </body>
 </html>
