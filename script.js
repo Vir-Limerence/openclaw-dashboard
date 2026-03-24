@@ -92,6 +92,11 @@ async function init() {
     }).join('');
   }
 
+  // Raw status textarea
+  if (status.rawStatus) {
+    document.getElementById('raw-status').value = status.rawStatus;
+  }
+
   // Today memory
   if (status.todayMemory && status.todayMemory.trim().length > 10) {
     document.getElementById('today-section').style.display = 'block';
