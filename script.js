@@ -1,6 +1,10 @@
 // OpenClaw Dashboard Script
 
+var _initDone = false;
 async function init() {
+  if (_initDone) return;
+  _initDone = true;
+
   const BASE = '.';
   let status = null, skills = null;
 
@@ -128,6 +132,11 @@ async function init() {
   };
 
   if (typeof Chart !== 'undefined') {
+    // Destroy existing charts if any
+    ['chart-sessions', 'chart-skills'].forEach(function(id) {
+      var existing = Chart.getChart(id);
+      if (existing) existing.destroy();
+    });
     new Chart(document.getElementById('chart-sessions'), {
       type: 'line',
       data: {
@@ -148,4 +157,8 @@ async function init() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', init);
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
