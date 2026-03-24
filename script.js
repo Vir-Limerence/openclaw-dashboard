@@ -59,6 +59,16 @@ async function init() {
   document.getElementById('val-memory').textContent = status.shortTermCount || 0;
   document.getElementById('val-perm').textContent = status.permanentCount || 0;
 
+  // Channels / Bots
+  var channels = status.channels || [];
+  document.getElementById('val-channels').textContent = channels.length;
+  if (channels.length > 0) {
+    var channelNames = channels.map(function(c) { return c.name; }).join(', ');
+    document.getElementById('sub-channels').textContent = channelNames;
+  } else {
+    document.getElementById('sub-channels').textContent = '无数据';
+  }
+
   var memList = (status.memoryList || '').split(',').filter(Boolean);
   document.getElementById('mem-count').textContent = memList.length;
   document.getElementById('memory-list').innerHTML = memList.length > 0 ?
