@@ -288,56 +288,52 @@
 </details>
 
 <script>
-// ── Data URLs (GitHub raw content) ──
-const RAW_BASE = 'https://raw.githubusercontent.com/Vir-Limerence/openclaw-dashboard/main';
-const PAGES_BASE = 'https://vir-limerence.github.io/openclaw-dashboard';
+// ── Data URLs ──
+const BASE = 'https://vir-limerence.github.io/openclaw-dashboard';
 
 async function loadJSON(url) {
+  const nocache = url + '?v=' + Date.now();
   try {
-    const r = await fetch(url + '?t=' + Date.now());
-    if (!r.ok) {
-      // fallback: try pages base
-      const alt = url.replace(RAW_BASE, PAGES_BASE);
-      const r2 = await fetch(alt + '?t=' + Date.now());
-      if (!r2.ok) return null;
-      return r2.json();
-    }
-    return r.json();
+    const r = await fetch(nocache);
+    if (r.ok) return r.json();
+    return null;
   } catch { return null; }
 }
 
 async function loadText(url) {
+  const nocache = url + '?v=' + Date.now();
   try {
-    const r = await fetch(url + '?t=' + Date.now());
-    if (!r.ok) {
-      const alt = url.replace(RAW_BASE, PAGES_BASE);
-      const r2 = await fetch(alt + '?t=' + Date.now());
-      if (!r2.ok) return '';
-      return r2.text();
-    }
-    return r.text();
+    const r = await fetch(nocache);
+    if (r.ok) return r.text();
+    return '';
   } catch { return ''; }
 }
 
 async function main() {
+  let status = null, skills = null, historyText = '';
+
   try {
-    const [status, skills, historyText] = await Promise.all([
-      loadJSON(`${RAW_BASE}/data/status.json`),
-      loadJSON(`${RAW_BASE}/data/skills.json`),
-      loadText(`${RAW_BASE}/data/history_recent.jsonl`)
+    [status, skills, historyText] = await Promise.all([
+      loadJSON(`${BASE}/data/status.json`),
+      loadJSON(`${BASE}/data/skills.json`),
+      loadText(`${BASE}/data/history_recent.jsonl`)
     ]);
+  } catch(e) {
+    console.error('Fetch failed:', e);
+  }
 
-    // ── Hide loader ──
-    const loading = document.getElementById('loading');
-    if (loading) { loading.classList.add('hidden'); setTimeout(() => loading.remove(), 400); }
+  // ── Always hide loader ──
+  const loading = document.getElementById('loading');
+  if (loading) { loading.classList.add('hidden'); setTimeout(() => loading.remove(), 400); }
 
-    if (!status) {
-      document.body.innerHTML += '<p style="color:var(--red);padding:24px">⚠️ 数据加载失败，请稍后刷新重试</p>';
-      return;
-    }
+  if (!status) {
+    document.body.innerHTML += '<div style="padding:24px;text-align:center;color:var(--text-dim)"><p>⚠️ 数据加载失败</p><p style="font-size:0.8rem;margin-top:8px">请检查网络后刷新重试</p></div>';
+    return;
+  }
 
   document.getElementById('update-time').textContent =
-    `最后更新：${status.datetime} · 每小时自动刷新`;
+    `最后更新：${status.datetime} · 每小时自动刷新`;</parameter>
+
 
   // ── Status row ──
   const row = document.getElementById('status-row');
