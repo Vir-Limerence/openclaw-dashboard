@@ -288,38 +288,48 @@
 </details>
 
 <script>
-// ── Data URLs ──
-const BASE = 'https://vir-limerence.github.io/openclaw-dashboard';
+// ── Data URLs (relative paths) ──
+const BASE = '.';
 
-async function loadJSON(url) {
-  const nocache = url + '?v=' + Date.now();
+async function loadJSON(path) {
   try {
-    const r = await fetch(nocache);
+    const r = await fetch(path);
     if (r.ok) return r.json();
+    // Try with cache-bust
+    const r2 = await fetch(path + '?t=' + Date.now());
+    if (r2.ok) return r2.json();
     return null;
-  } catch { return null; }
+  } catch(e) {
+    console.warn('loadJSON failed:', e);
+    return null;
+  }
 }
 
-async function loadText(url) {
-  const nocache = url + '?v=' + Date.now();
+async function loadText(path) {
   try {
-    const r = await fetch(nocache);
+    const r = await fetch(path);
     if (r.ok) return r.text();
+    const r2 = await fetch(path + '?t=' + Date.now());
+    if (r2.ok) return r2.text();
     return '';
-  } catch { return ''; }
+  } catch(e) {
+    console.warn('loadText failed:', e);
+    return '';
+  }
 }
 
 async function main() {
   let status = null, skills = null, historyText = '';
 
+  // Load data
   try {
     [status, skills, historyText] = await Promise.all([
-      loadJSON(`${BASE}/data/status.json`),
-      loadJSON(`${BASE}/data/skills.json`),
-      loadText(`${BASE}/data/history_recent.jsonl`)
+      loadJSON('./data/status.json'),
+      loadJSON('./data/skills.json'),
+      loadText('./data/history_recent.jsonl')
     ]);
   } catch(e) {
-    console.error('Fetch failed:', e);
+    console.error('Load error:', e);
   }
 
   // ── Always hide loader ──
@@ -327,7 +337,7 @@ async function main() {
   if (loading) { loading.classList.add('hidden'); setTimeout(() => loading.remove(), 400); }
 
   if (!status) {
-    document.body.innerHTML += '<div style="padding:24px;text-align:center;color:var(--text-dim)"><p>⚠️ 数据加载失败</p><p style="font-size:0.8rem;margin-top:8px">请检查网络后刷新重试</p></div>';
+    document.body.innerHTML += '<div style="padding:24px;text-align:center"><p style="color:var(--yellow)">⚠️ 数据加载失败（GitHub Pages 在国内可能需要代理）</p><p style="font-size:0.8rem;color:var(--text-dim);margin-top:8px">请尝试使用 VPN 或刷新重试</p></div>';
     return;
   }
 
